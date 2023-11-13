@@ -1,0 +1,26 @@
+{
+  "name": "nude2",
+  "version": "1.0.0",
+  "description": "",
+  "main": "src/index.js",
+  "scripts": {
+    "ayyy": "webpack",
+    "lmao": "webpack serve --config ./webpack.config.js --static ./app --port 8181 --open",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Matt",
+  "license": "UNLICENSED",
+  "devDependencies": {
+    "@babel/core": "^7.2.2",
+    "@babel/preset-env": "^7.1.6",
+    "@babel/register": "^7.0.0",
+    "babel-loader": "^8.0.4",
+    "ethers": "^5.6.9",
+    "node-polyfill-webpack-plugin": "^2.0.0",
+    "raw-loader": "^4.0.2",
+    "web3": "^1.7.4",
+    "webpack": "^5.59.0",
+    "webpack-cli": "^4.9.1",
+    "webpack-dev-server": "^4.3.1"
+  }
+}
