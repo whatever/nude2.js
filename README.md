@@ -1,5 +1,5 @@
 :hocho:
 
-bash```
+```bash
 npm run lmao
 ```
