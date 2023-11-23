@@ -2,9 +2,35 @@
 <html>
   <head>
     <title>x_x</title>
+    <style>
+      #panel {
+        border: 1px solid black;
+      }
+
+      #panel.active {
+        border: 1px solid red;
+        cursor: grabbing;
+      }
+
+      #panel.inactive {
+        border: 1px solid blue;
+        cursor: pointer;
+        cursor: grab;
+      }
+    </style>
+
     <script src="/nude2.bundled.js"></script>
   </head>
   <body>
     x_x
+
+    <div id="control-container">
+      <canvas width="200" height="800" id="panel"></canvas>
+    </div>
+
+    <script>
+      var panel = document.getElementById('panel');
+      var control = new nude2.WaveController(panel);
+    </script>
   </body>
 </html>
