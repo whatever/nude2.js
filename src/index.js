@@ -1,3 +1,7 @@
+import * as ort from 'onnxruntime-web';
+
+const net = "./nude2-dcgan-met-random-crop-198x198.onnx"
+
 export class WaveController {
 
   constructor(el) {
@@ -172,3 +176,18 @@ export class WaveController {
     });
   }
 }
+
+async function main() {
+  const session = await ort.InferenceSession.create(
+    net,
+    { executionProviders: ['webgl'], graphOptimizationLevel: 'all' },
+  );
+  const v = Array(100).fill(0.0);
+  const t = new ort.Tensor("float32", v, [1, 100, 1, 1]);
+
+  const r = await session.run({ "onnx::ConvTranspose_0": t });
+
+  console.log("Result =", r);
+}
+
+main();
