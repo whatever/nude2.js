@@ -9,11 +9,19 @@ export class WaveController {
 
     this.highlighted = -1;
 
-    this.vector = new Array(100).fill(0.0);
+    this.size = 100;
+    this.vector = new Array(this.size).fill(0.0);
     this.pos = [0.0, 0.0];
     this.draw();
+  }
 
-    console.log(this.vector);
+  // Capture a point and map to a vector slot and a value from [-1.0, 1.0]
+  capture(x, y) {
+    const w = this.el.width;
+    const h = this.el.height;
+    const i = Math.floor(y / h * this.size);
+    const v = (x / w) * 2.0 - 1.0;
+    this.vector[i] = v;
   }
 
   /**
@@ -24,39 +32,32 @@ export class WaveController {
   setupListeners() {
 
     let press = (e) => {
-
       if (this.active) {
         return;
       }
-
-      console.log("<<< press");
       this.active = true;
       this.el.className = "active";
+      this.capture(e.offsetX, e.offsetY);
+      this.update();
+      this.draw();
     };
 
     // Release control
     let release = (e) => {
-
       if (!this.active) {
         return;
       }
-
       this.active = false;
       this.el.className = "inactive";
-      console.log(">>> release");
+      this.update();
       this.draw();
     };
 
     let move = (e) => {
-
       if (!this.active) {
         return;
       }
-
-      let x = e.offsetX;
-      let y = e.offsetY;
-      this.pos = [x, y];
-
+      this.capture(e.offsetX, e.offsetY);
       this.update();
       this.draw();
     };
@@ -75,7 +76,7 @@ export class WaveController {
   }
 
   update() {
-    const h = this.el.height / 100;
+    const h = this.el.height / this.size;
     const i = Math.floor(this.pos[1] / h);
     this.highlighted = i;
     this.vector[i] = this.pos[0];
@@ -97,12 +98,10 @@ export class WaveController {
     this.el.height = h;
 
 
-    const Y_SEG_WIDTH = h / 100;
+    const Y_SEG_WIDTH = h / this.size;
 
 
     if (this.active) {
-      console.log("????")
-
       const corner_x = 0;
       context.beginPath()
       context.rect(
@@ -113,7 +112,6 @@ export class WaveController {
       );
       context.fillStyle = 'rgba(0, 0, 0, 0.1)';
       context.fill();
-
     }
 
 
@@ -130,44 +128,47 @@ export class WaveController {
     */
 
 
+    const WIDTH = this.el.width;
+    const HEIGHT = this.el.height;
+
+    let f = (x) => {
+      return (x / WIDTH) * 2.0 - 1.0;
+    };
+
+    let g = (y) => {
+      return (y + 1.0) / 2.0 * WIDTH;
+    };
+
+    for (let i=200; i < 300; i++) {
+      if (f(g(i)) != i) {
+        console.error("ERROR", f(i), f(g(i)), i);
+      }
+    }
+
+    context.beginPath();
+    let a = g(this.vector[0]);
+    let b = 0.5 * Y_SEG_WIDTH;
+    context.moveTo(a, b);
+
+    for (let i=1; i < this.vector.length; i++) {
+      let x = this.vector[i];
+      let y = (i+0.5) * Y_SEG_WIDTH;
+      let u = g(x);
+      context.lineTo(u, y);
+    }
+
+    context.lineWidth = 1;
+    context.strokeStyle = 'black';
+    context.stroke();
+
     this.vector.forEach((val, i) => {
 
-      let u = val;
+      let u = g(val);
       let v = (i+0.5) * Y_SEG_WIDTH;
-
       context.beginPath();
       context.arc(u, v, 2, 0, 2 * Math.PI, false);
       context.fillStyle = 'blue';
       context.fill();
-
-
-
-
-
-
-
-
     });
-
   }
 }
-
-/*
-
-
-a * x + c * y + e = 0
-b * x + d * y + f = 0
-
-
-h / 100 +  h / 200
-
-f(0, 0) = [w/2, h/200]
-f(0, 1) = [w/2, 3*h/200]
-
-a*0 + c*0 + e = [w/2, h/200]
-b*0 + 
-
-
-
-
- */
