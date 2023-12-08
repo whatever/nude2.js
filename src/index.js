@@ -1,6 +1,10 @@
 import * as ort from 'onnxruntime-web';
 
-const net = "./nude2-dcgan-met-random-crop-198x198.onnx"
+// const net = "./nude2-dcgan-met-random-crop-198x198.onnx"
+// const net = "./yikes.onnx"
+// const net = "./yada-yada.onnx"
+// const net = "./nice.onnx"
+const net = "./nude2-dcgan-met-random-crop-198x198.onnx";
 
 export class WaveController {
 
@@ -15,8 +19,15 @@ export class WaveController {
 
     this.size = 100;
     this.vector = new Array(this.size).fill(0.0);
+
+    for (let i=0; i < this.vector.length; i++) {
+      this.vector[i] = Math.random() * 2.0 - 1.0;
+    }
     this.pos = [0.0, 0.0];
+    this.update();
     this.draw();
+
+    this.loop();
   }
 
   // Capture a point and map to a vector slot and a value from [-1.0, 1.0]
@@ -26,6 +37,28 @@ export class WaveController {
     const i = Math.floor(y / h * this.size);
     const v = (x / w) * 2.0 - 1.0;
     this.vector[i] = v;
+  }
+
+  loop() {
+
+    if (this.loopId) {
+      clearInterval(this.loopId);
+    }
+
+
+
+    this.loopId = setInterval(() => {
+
+      let vec = JSON.stringify(this.vector);
+
+      if (this.last == vec) {
+        return;
+      }
+
+      this.last= vec;
+
+      generateImageFromApi(this.vector, "api-image-container");
+    }, 1000);
   }
 
   /**
@@ -84,6 +117,7 @@ export class WaveController {
     const i = Math.floor(this.pos[1] / h);
     this.highlighted = i;
     this.vector[i] = this.pos[0];
+    main(this.vector);
   }
 
   /**
@@ -177,17 +211,74 @@ export class WaveController {
   }
 }
 
-async function main() {
+async function main(v) {
+  return;
+
+    /***
+     * Normalize a tensor image with mean and standard deviation. This transform does not support PIL Image. Given mean: (mean[1],...,mean[n]) and std: (std[1],..,std[n]) for n channels, this transform will normalize each channel of the input torch.*Tensor i.e., output[channel] = (input[channel] - mean[channel]) / std[channel]
+   */
+  const normalizations = {
+    "mean": [0.485, 0.456, 0.406],
+    "std": [0.229, 0.224, 0.225],
+  };
+
   const session = await ort.InferenceSession.create(
     net,
-    { executionProviders: ['webgl'], graphOptimizationLevel: 'all' },
+    { backendHint: 'webgl', executionProviders: ['webgl'], graphOptimizationLevel: 'all' },
   );
-  const v = Array(100).fill(0.0);
-  const t = new ort.Tensor("float32", v, [1, 100, 1, 1]);
 
-  const r = await session.run({ "onnx::ConvTranspose_0": t });
+  const b = 1;
+  const n = 100;
 
-  console.log("Result =", r);
+  const t = new ort.Tensor("float32", v, [b, n, 1, 1]);
+
+  let r = undefined;
+  r = await session.run({ "vector": t });
+
+  const url = r["output"].toDataURL();
+  // const url = r["39"].toDataURL();
+
+  let el = document.getElementById("image-container");
+  let img = new Image();
+  img.src = url;
+  el.innerHTML = "";
+  el.appendChild(img);
 }
 
-main();
+
+// ...
+async function generateImageFromOnnxWeb(vec, id) {
+  let el = document.getElementById(id);
+}
+
+// ...
+async function generateImageFromApi(vec, id) {
+
+  let el = document.getElementById(id);
+  el.innerHTML = "";
+
+  let img = new Image();
+
+  let data = {
+    "vec": vec,
+    "train": document.getElementById("use-training").checked,
+  };
+
+  let req = {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify(data),
+  };
+
+  let url2 = "/api/v1/image";
+  let payload = await fetch(url2, req)
+  let blob = await payload.blob();
+  let blobUrl = URL.createObjectURL(blob);
+
+  let img3 = new Image();
+  img3.src = blobUrl;
+  img3.onload = () => {
+    el.innerHTML = "";
+    el.appendChild(img3);
+  };
+}
