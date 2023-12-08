@@ -45,18 +45,13 @@ export class WaveController {
       clearInterval(this.loopId);
     }
 
-
-
     this.loopId = setInterval(() => {
-
       let vec = JSON.stringify(this.vector);
-
       if (this.last == vec) {
         return;
       }
-
       this.last= vec;
-
+      generateImageFromOnnxWeb(this.vector, "image-container");
       generateImageFromApi(this.vector, "api-image-container");
     }, 1000);
   }
@@ -213,14 +208,12 @@ export class WaveController {
 
 async function main(v) {
   return;
+}
 
-    /***
-     * Normalize a tensor image with mean and standard deviation. This transform does not support PIL Image. Given mean: (mean[1],...,mean[n]) and std: (std[1],..,std[n]) for n channels, this transform will normalize each channel of the input torch.*Tensor i.e., output[channel] = (input[channel] - mean[channel]) / std[channel]
-   */
-  const normalizations = {
-    "mean": [0.485, 0.456, 0.406],
-    "std": [0.229, 0.224, 0.225],
-  };
+
+// ...
+async function generateImageFromOnnxWeb(vec, id) {
+  let el = document.getElementById(id);
 
   const session = await ort.InferenceSession.create(
     net,
@@ -230,7 +223,7 @@ async function main(v) {
   const b = 1;
   const n = 100;
 
-  const t = new ort.Tensor("float32", v, [b, n, 1, 1]);
+  const t = new ort.Tensor("float32", vec, [b, n, 1, 1]);
 
   let r = undefined;
   r = await session.run({ "vector": t });
@@ -238,17 +231,10 @@ async function main(v) {
   const url = r["output"].toDataURL();
   // const url = r["39"].toDataURL();
 
-  let el = document.getElementById("image-container");
   let img = new Image();
   img.src = url;
   el.innerHTML = "";
   el.appendChild(img);
-}
-
-
-// ...
-async function generateImageFromOnnxWeb(vec, id) {
-  let el = document.getElementById(id);
 }
 
 // ...

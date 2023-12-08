@@ -30,7 +30,7 @@ module.exports = {
     }),
   ],
   devServer: {
-    bonjour: true,
+    /* bonjour: true, */
     proxy: {
       "/api/": "http://localhost:8181",
     }
