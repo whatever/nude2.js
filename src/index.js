@@ -28,6 +28,29 @@ export class WaveController {
     this.draw();
 
     this.loop();
+
+    this.worker = new Worker(new URL("./generate-image.js", import.meta.url));
+
+    this.worker.onmessage = async (e) => {
+      const b = 1;
+      const n = this.size;
+      const vec = this.vector;
+
+      const t = new ort.Tensor("float32", vec, [b, n, 1, 1]);
+
+      Object.assign(t, e.data);
+      let img = new Image();
+
+
+      img.src = t.toDataURL();
+
+      const el = document.getElementById("image-container");
+
+      requestAnimationFrame(() => {
+        el.innerHTML = "";
+        el.appendChild(img);
+      });
+    };
   }
 
   // Capture a point and map to a vector slot and a value from [-1.0, 1.0]
@@ -45,15 +68,21 @@ export class WaveController {
       clearInterval(this.loopId);
     }
 
-    this.loopId = setInterval(() => {
+    this.loopId = setInterval(async () => {
       let vec = JSON.stringify(this.vector);
       if (this.last == vec) {
         return;
       }
       this.last= vec;
-      generateImageFromOnnxWeb(this.vector, "image-container");
+
+
+      this.worker.postMessage({
+        "vec": this.vector,
+        "train": document.getElementById("use-training").checked,
+      });
+
       generateImageFromApi(this.vector, "api-image-container");
-    }, 1000);
+    }, 3000, false);
   }
 
   /**
@@ -112,7 +141,6 @@ export class WaveController {
     const i = Math.floor(this.pos[1] / h);
     this.highlighted = i;
     this.vector[i] = this.pos[0];
-    main(this.vector);
   }
 
   /**
@@ -206,10 +234,6 @@ export class WaveController {
   }
 }
 
-async function main(v) {
-  return;
-}
-
 
 // ...
 async function generateImageFromOnnxWeb(vec, id) {
@@ -225,16 +249,13 @@ async function generateImageFromOnnxWeb(vec, id) {
 
   const t = new ort.Tensor("float32", vec, [b, n, 1, 1]);
 
-  let r = undefined;
-  r = await session.run({ "vector": t });
-
-  const url = r["output"].toDataURL();
-  // const url = r["39"].toDataURL();
-
-  let img = new Image();
-  img.src = url;
-  el.innerHTML = "";
-  el.appendChild(img);
+  session.run({ "vector": t }).then((r) => {
+    const url = r["output"].toDataURL();
+    let img = new Image();
+    img.src = url;
+    el.innerHTML = "";
+    el.appendChild(img);
+  });
 }
 
 // ...
